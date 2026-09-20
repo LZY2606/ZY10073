@@ -34,3 +34,9 @@ coverage/
 .vite/
 .turbo/
 *.tsbuildinfo
+
+# CiteWeave local databases
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.egg-info/

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CiteWeave · 带时间的法规引用工作台</title>
+<style>
+:root { --bg:#f6f7f9; --panel:#fff; --line:#e3e6ea; --ink:#1f2328;
+  --muted:#6b7280; --accent:#2563eb; --bad:#b91c1c; --warn:#b45309; --ok:#15803d; }
+* { box-sizing:border-box; }
+body { margin:0; font:14px/1.55 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--ink); }
+header { padding:14px 22px; background:#111827; color:#fff; display:flex;
+  align-items:baseline; gap:14px; }
+header h1 { font-size:17px; margin:0; }
+header .pv { color:#9ca3af; font-size:12px; }
+nav { display:flex; gap:4px; padding:10px 18px 0; background:var(--panel);
+  border-bottom:1px solid var(--line); }
+nav button { border:0; background:none; padding:9px 14px; cursor:pointer;
+  font-size:14px; color:var(--muted); border-bottom:2px solid transparent; }
+nav button.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+main { padding:18px 22px; max-width:1180px; margin:0 auto; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  padding:14px 16px; margin-bottom:14px; }
+.card h2 { font-size:15px; margin:0 0 10px; }
+label { font-size:12px; color:var(--muted); display:block; margin:8px 0 3px; }
+input,textarea,select { width:100%; padding:7px 9px; border:1px solid var(--line);
+  border-radius:6px; font:inherit; background:#fff; }
+textarea { min-height:110px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; }
+.row { display:flex; gap:10px; flex-wrap:wrap; }
+.row > div { flex:1; min-width:120px; }
+button.act { background:var(--accent); color:#fff; border:0; border-radius:6px;
+  padding:8px 14px; cursor:pointer; margin-top:12px; }
+button.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th,td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);
+  vertical-align:top; }
+th { color:var(--muted); font-weight:600; background:#fafbfc; position:sticky; top:0; }
+.pill { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; }
+.pill.active { background:#dcfce7; color:var(--ok); }
+.pill.missing,.pill.repealed_target,.pill.cross_version_conflict { background:#fee2e2; color:var(--bad); }
+.pill.not_in_force,.pill.ambiguous { background:#fef3c7; color:var(--warn); }
+.pill.resolved { background:#dbeafe; color:#1d4ed8; }
+.pill.future { background:#e0e7ff; color:#4338ca; }
+.muted { color:var(--muted); }
+.quote { font-family:ui-monospace,Menlo,monospace; background:#f3f4f6;
+  padding:1px 5px; border-radius:4px; }
+pre { white-space:pre-wrap; word-break:break-all; background:#f9fafb;
+  border:1px solid var(--line); border-radius:6px; padding:10px; font-size:12.5px; }
+.toast { position:fixed; right:18px; bottom:18px; max-width:430px; padding:10px 14px;
+  border-radius:8px; background:#111827; color:#fff; font-size:13px; display:none;
+  white-space:pre-wrap; z-index:9; }
+.toast.err { background:var(--bad); }
+.chain { font-family:ui-monospace,Menlo,monospace; color:var(--accent); }
+.diverge { background:#fff7ed; border:1px solid #fed7aa; }
+.small { font-size:12px; }
+</style>
+</head>
+<body>
+<header><h1>CiteWeave</h1>
+  <span class="pv">带有效时间的法规引用图 · 核心规则在服务端</span></header>
+<nav id="tabs"></nav>
+<main id="view"></main>
+<div class="toast" id="toast"></div>
+<script src="/app.js"></script>
+</body>
+</html>
