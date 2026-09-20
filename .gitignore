@@ -15,6 +15,7 @@ env/
 __pycache__/
 *.pyc
 .pytest_cache/
+.citeweave/
 .mypy_cache/
 .ruff_cache/
 .tox/

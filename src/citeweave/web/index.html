@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CiteWeave 法规引用工作台</title>
+  <style>
+    :root { color-scheme: light; --line:#d8dde7; --muted:#667085; --blue:#175cd3; --red:#b42318; --amber:#b54708; --green:#027a48; --bg:#f6f7fb; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:#1d2939; }
+    header { padding:22px 28px; background:#101828; color:white; }
+    header h1 { margin:0 0 4px; font-size:22px; }
+    header p { margin:0; color:#cbd5e1; }
+    main { padding:20px 28px 40px; display:grid; gap:16px; }
+    section { background:white; border:1px solid var(--line); border-radius:10px; padding:16px; box-shadow:0 1px 2px rgba(16,24,40,.05); }
+    h2 { margin:0 0 12px; font-size:17px; }
+    h3 { margin:14px 0 8px; font-size:15px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:8px 0 4px; }
+    input, select, textarea { width:100%; border:1px solid #cbd5e1; border-radius:7px; padding:8px 9px; font:inherit; background:white; }
+    textarea { min-height:150px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+    button { border:0; border-radius:7px; padding:8px 12px; background:var(--blue); color:white; font:inherit; cursor:pointer; margin-top:10px; }
+    button.secondary { background:#344054; }
+    button.danger { background:var(--red); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .row { display:flex; gap:8px; align-items:end; flex-wrap:wrap; }
+    .row > div { flex:1 1 160px; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    th,td { border-bottom:1px solid #eaecf0; padding:8px; text-align:left; vertical-align:top; }
+    th { color:#475467; font-size:12px; background:#f9fafb; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#f9fafb; border:1px solid #eaecf0; padding:10px; border-radius:8px; max-height:360px; overflow:auto; }
+    .pill { display:inline-block; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:600; }
+    .active,.resolved,.resolved_manual,.resolved_manual_consensus { background:#dcfae6; color:var(--green); }
+    .divergent { background:#fee4e2; color:var(--red); }
+    .unresolved,.target_missing,.source_not_effective,.target_not_effective { background:#fef0c7; color:var(--amber); }
+    .target_repealed,.source_repealed { background:#fee4e2; color:var(--red); }
+    .target_superseded,.source_superseded { background:#e9d7fe; color:#6941c6; }
+    .muted { color:var(--muted); }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width: 800px) { .two { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>CiteWeave</h1>
+  <p>带有效时间、原句证据、候选依据和冲突保留的法规引用工作台</p>
+</header>
+<main>
+  <section>
+    <h2>导入法规版本</h2>
+    <div class="grid">
+      <div><label>法规标识</label><input id="doc_key" value="demo-law"></div>
+      <div><label>版本标签（建议 YYYY-MM-DD）</label><input id="version_label" value="2020-01-01"></div>
+      <div><label>标题</label><input id="title" value="示例法"></div>
+      <div><label>生效日期</label><input id="effective_date" type="date" value="2020-01-01"></div>
+      <div><label>废止日期</label><input id="repealed_date" type="date"></div>
+    </div>
+    <label>原文（规范化文本仅另存，不覆盖 raw_text）</label>
+    <textarea id="raw_text"># 第一章 总则
+第一条 为了规范引用，制定本法。
+第二条 适用规则依照前款规定。
+第三条 本章另有规定的除外。</textarea>
+    <button onclick="importDocument()">导入版本</button>
+  </section>
+
+  <section>
+    <h2>版本与状态机</h2>
+    <div id="documents"></div>
+  </section>
+
+  <section>
+    <h2>时间图</h2>
+    <div class="row">
+      <div><label>查看日期</label><input id="graph_date" type="date" value="2020-01-01"></div>
+      <div><button class="secondary" onclick="loadGraph()">查看有效图</button></div>
+      <div><label>左日期</label><input id="left_date" type="date" value="2020-01-01"></div>
+      <div><label>右日期</label><input id="right_date" type="date" value="2021-01-01"></div>
+      <div><button class="secondary" onclick="compareGraph()">比较边</button></div>
+    </div>
+    <div id="graph"></div>
+    <h3>比较结果</h3>
+    <div id="comparison"></div>
+  </section>
+
+  <section>
+    <h2>引文、候选与人工修正</h2>
+    <div id="citations"></div>
+  </section>
+
+  <section>
+    <h2>最短引用链和时间线</h2>
+    <div class="row">
+      <div><label>源条款 ID</label><input id="chain_source"></div>
+      <div><label>目标条款 ID</label><input id="chain_target"></div>
+      <div><label>日期</label><input id="chain_date" type="date" value="2020-01-01"></div>
+      <div><button class="secondary" onclick="findChain()">查询</button></div>
+    </div>
+    <pre id="chain"></pre>
+    <button class="secondary" onclick="loadTimeline()">查看时间线</button>
+    <pre id="timeline"></pre>
+  </section>
+
+  <section>
+    <h2>快照与确定性导出</h2>
+    <div class="row">
+      <div><label>快照标签</label><input id="snapshot_label" value="release-1"></div>
+      <div><label>快照日期</label><input id="snapshot_date" type="date" value="2020-01-01"></div>
+      <div><label>研究者</label><input id="snapshot_user" value="researcher-a"></div>
+      <div><button onclick="publishSnapshot()">发布不可变快照</button></div>
+      <div><button class="secondary" onclick="exportPackage()">导出引用包</button></div>
+    </div>
+    <pre id="export"></pre>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    headers: {'Content-Type': 'application/json', ...(options.headers || {})},
+    ...options
+  });
+  const data = await response.json();
+  if (!response.ok) throw {status: response.status, data};
+  return data;
+}
+async function importDocument() {
+  const body = {
+    doc_key: $('doc_key').value,
+    version_label: $('version_label').value,
+    title: $('title').value,
+    raw_text: $('raw_text').value,
+    effective_date: $('effective_date').value || null,
+    repealed_date: $('repealed_date').value || null,
+    status: 'active'
+  };
+  try {
+    const result = await api('/api/documents', {method:'POST', body: JSON.stringify(body)});
+    alert(result.duplicate ? '重复请求：返回既有版本，未创建第二份数据。' : '版本已导入。');
+    await loadDocuments();
+    await loadCitations();
+  } catch (error) { alert(error.data?.error || error); }
+}
+async function loadDocuments() {
+  const result = await api('/api/documents');
+  $('documents').innerHTML = `<table><thead><tr><th>版本</th><th>状态</th><th>日期</th><th>版本号</th><th>操作</th></tr></thead><tbody>
+    ${result.documents.map(doc => `<tr>
+      <td><strong>${esc(doc.title)}</strong><br><span class="muted">${esc(doc.doc_key)} / ${esc(doc.version_label)}</span><br>${esc(doc.id)}</td>
+      <td><span class="pill ${esc(doc.status)}">${esc(doc.status)}</span></td>
+      <td>生效 ${esc(doc.effective_date || '-')}<br>废止 ${esc(doc.repealed_date || '-')}</td>
+      <td>${doc.lock_version}</td>
+      <td>
+        <select id="to_${esc(doc.id)}"><option>superseded</option><option>repealed</option><option>active</option></select>
+        <button onclick="transitionDoc('${esc(doc.id)}')">状态跳转</button>
+      </td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+async function transitionDoc(id) {
+  const docs = (await api('/api/documents')).documents;
+  const doc = docs.find(item => item.id === id);
+  try {
+    await api(`/api/documents/${id}/transition`, {
+      method: 'POST',
+      body: JSON.stringify({status: $(`to_${id}`).value, expected_version: doc.lock_version})
+    });
+  } catch (error) { alert(JSON.stringify(error.data, null, 2)); }
+  await loadDocuments(); await loadGraph();
+}
+function candidateRows(citation) {
+  return citation.candidates.map(candidate => `<tr>
+    <td><input type="radio" name="target_${esc(citation.id)}" value="${esc(candidate.target_clause_id)}"></td>
+    <td>${esc(candidate.target_version_label)}<br>${esc(candidate.target_locator)}</td>
+    <td>${candidate.score}</td><td>${esc(candidate.reason)}</td>
+    <td><pre>${esc(candidate.target_text)}</pre></td>
+  </tr>`).join('');
+}
+function decisionContexts(citation) {
+  if (!citation.alternative_targets || !citation.alternative_targets.length) return '';
+  return `<h4>已保留的研究者上下文</h4><table><thead><tr><th>研究者</th><th>目标</th><th>版本区间</th><th>来源页/原句</th><th>说明</th></tr></thead><tbody>
+    ${citation.alternative_targets.map(item => `<tr><td>${esc(item.researcher)}</td>
+      <td>${esc(item.target_version_label)} ${esc(item.target_locator)}</td>
+      <td>${esc(item.applies_from_version || '∞-')} ~ ${esc(item.applies_to_version || '+∞')}</td>
+      <td>${esc(item.source_page)}<br>${esc(item.original_sentence)}</td><td>${esc(item.rationale)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+async function loadCitations() {
+  const result = await api('/api/citations');
+  $('citations').innerHTML = result.citations.map(citation => `<div style="border-top:1px solid #eaecf0;padding:12px 0;">
+    <p><span class="pill ${esc(citation.resolution_status)}">${esc(citation.resolution_status)}</span>
+    <strong>${esc(citation.quote)}</strong> <span class="muted">${esc(citation.anchor_locator)} / lock ${citation.lock_version}</span></p>
+    <blockquote>原句：${esc(citation.sentence)}</blockquote>
+    <table><thead><tr><th>选择</th><th>候选目标</th><th>分</th><th>依据</th><th>目标原文</th></tr></thead><tbody>${candidateRows(citation)}</tbody></table>
+    <p class="muted">选择依据：${esc(citation.resolution_reason)}</p>
+    ${decisionContexts(citation)}
+    <div class="grid">
+      <div><label>研究者</label><input value="researcher-a" id="researcher_${esc(citation.id)}"></div>
+      <div><label>适用起始版本（可空）</label><input placeholder="2020-01-01" id="from_${esc(citation.id)}"></div>
+      <div><label>适用结束版本（可空）</label><input placeholder="2020-12-31" id="to_version_${esc(citation.id)}"></div>
+      <div><label>说明</label><input id="rationale_${esc(citation.id)}"></div>
+    </div>
+    <button onclick="correct('${esc(citation.id)}', ${citation.lock_version})">保存候选修正</button>
+    <button class="secondary" onclick="mergeForm('${esc(citation.id)}')">为两个目标显式合并</button>
+    <button class="secondary" onclick="reparse('${esc(citation.semantic_key)}')">触发受影响节点重解析</button>
+    <pre id="diff_${esc(citation.id)}"></pre>
+  </div>`).join('');
+}
+async function mergeForm(id) {
+  const first_target = prompt('第一个目标 clause_id（例如 researcher A）');
+  const first_researcher = prompt('第一个研究者', 'researcher-a');
+  const second_target = prompt('第二个目标 clause_id（例如 researcher B）');
+  const second_researcher = prompt('第二个研究者', 'researcher-b');
+  if (!first_target || !second_target) return;
+  const body = {
+    researcher: 'coordinator',
+    first: {target_clause_id:first_target, researcher:first_researcher, rationale:`${first_researcher} via UI`},
+    second: {target_clause_id:second_target, researcher:second_researcher, rationale:`${second_researcher} via UI`}
+  };
+  try { await api(`/api/citations/${id}/merge`, {method:'POST', body:JSON.stringify(body)}); }
+  catch(error) { alert(JSON.stringify(error.data, null, 2)); }
+  await loadCitations(); await loadGraph();
+}
+async function correct(id, lockVersion) {
+  const target = document.querySelector(`input[name="target_${id}"]:checked`)?.value;
+  if (!target) return alert('请先选择一个候选目标。');
+  const body = {
+    researcher: $(`researcher_${id}`).value,
+    target_clause_id: target,
+    rationale: $(`rationale_${id}`).value,
+    applies_from_version: $(`from_${id}`).value || null,
+    applies_to_version: $(`to_version_${id}`).value || null,
+    expected_version: lockVersion
+  };
+  try {
+    await api(`/api/citations/${id}/corrections`, {method:'POST', body: JSON.stringify(body)});
+  } catch (error) {
+    $(`diff_${id}`).textContent = JSON.stringify(error.data, null, 2);
+    alert('检测到落后版本或不同研究者目标；页面已展示双方差异，不会静默覆盖。');
+  }
+  await loadCitations(); await loadGraph();
+}
+async function reparse(key) {
+  await api('/api/citations/x/reparse', {method:'POST', body: JSON.stringify({citation_semantic_key: key})});
+  await loadCitations();
+}
+async function loadGraph() {
+  const date = $('graph_date').value;
+  const graph = await api(`/api/graph?date=${date}`);
+  $('graph').innerHTML = `<p>${Object.entries(graph.counts).map(([key,value]) => `<span class="pill ${key}">${key}</span>`).join(' ')}</p>
+  <table><thead><tr><th>源</th><th>引文</th><th>目标</th><th>状态</th><th>原句</th></tr></thead><tbody>
+  ${graph.edges.map(edge => `<tr><td>${esc(edge.source_version_label)} ${esc(edge.source_locator)}</td><td>${esc(edge.quote)}</td>
+  <td>${esc(edge.target_version_label || '-')}<br>${esc(edge.target_locator || '不存在')}</td>
+  <td><span class="pill ${esc(edge.state)}">${esc(edge.state)}</span><br>${esc(edge.resolution_reason)}</td><td>${esc(edge.sentence)}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+async function compareGraph() {
+  const result = await api(`/api/compare?left=${$('left_date').value}&right=${$('right_date').value}`);
+  const rows = list => list.map(edge => {
+    const item = edge.after || edge;
+    return `<tr><td>${esc(item.key)}</td><td>${esc(item.source_version_label)} ${esc(item.source_locator)}</td><td>${esc(item.target_version_label || '-')} ${esc(item.target_locator || '-')}</td><td>${esc(item.state)}</td></tr>`;
+  }).join('');
+  $('comparison').innerHTML = `<div class="two"><div><h3>新增</h3><table>${rows(result.added)}</table><h3>消失</h3><table>${rows(result.disappeared)}</table></div>
+    <div><h3>重定向</h3><table>${result.redirected.map(pair => `<tr><td>${esc(pair.before.target_locator)} → ${esc(pair.after.target_locator)}</td></tr>`).join('')}</table></div></div>
+    <p class="muted">未变化：${result.unchanged_count}</p>`;
+}
+async function findChain() {
+  const params = new URLSearchParams({source_clause_id:$('chain_source').value,target_clause_id:$('chain_target').value,date:$('chain_date').value});
+  $('chain').textContent = JSON.stringify(await api('/api/chain?'+params), null, 2);
+}
+async function loadTimeline() {
+  $('timeline').textContent = JSON.stringify(await api('/api/timeline'), null, 2);
+}
+async function publishSnapshot() {
+  const body = {label:$('snapshot_label').value, at_date:$('snapshot_date').value, created_by:$('snapshot_user').value};
+  try { await api('/api/snapshots', {method:'POST', body: JSON.stringify(body)}); alert('快照已发布；后续修正不会改变该快照。'); }
+  catch(error) { alert(JSON.stringify(error.data, null, 2)); }
+}
+async function exportPackage() {
+  const pkg = await api('/api/export');
+  $('export').textContent = JSON.stringify({parser_version:pkg.parser_version, package_fingerprint:pkg.package_fingerprint, documents:pkg.documents.length, citations:pkg.citations.length}, null, 2);
+}
+loadDocuments(); loadCitations(); loadGraph();
+</script>
+</body>
+</html>
